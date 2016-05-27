@@ -29,7 +29,7 @@ class GumtreeSpider(InitSpider):
         """Generate a login request."""
         print "login=============="
         return FormRequest.from_response(response,
-                    formdata={'loginMail': 'dangduonghung@gmail.com', 'password': 'Hung123'},
+                    formdata={'loginMail': 'xxx@gmail.com', 'password': 'xxx'},
                     callback=self.check_login_response)
 
     def check_login_response(self, response):
