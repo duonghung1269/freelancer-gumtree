@@ -11,13 +11,17 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 /**
  *
  * @author duonghung1269
  */
 public class GumtreeScraperForm extends javax.swing.JFrame {
-
+    
+    private Logger LOG = Logger.getLogger(this.getClass());
+    
     /**
      * Creates new form GumtreeScraperForm
      */
@@ -38,13 +42,14 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         tfUsername = new javax.swing.JTextField();
-        tfPassword = new javax.swing.JTextField();
-        tfUrl = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         tfOutputFileName = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
+        tfPassword = new javax.swing.JPasswordField();
+        cbbUrl = new javax.swing.JComboBox<>();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Gumtree Scraper");
 
         btnScrape.setText("Scrape");
         btnScrape.addActionListener(new java.awt.event.ActionListener() {
@@ -57,17 +62,13 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
 
         jLabel2.setText("Password");
 
-        tfPassword.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tfPasswordActionPerformed(evt);
-            }
-        });
-
         jLabel3.setText("Url");
 
         tfOutputFileName.setText("gumtree.csv");
 
         jLabel4.setText("Output File");
+
+        cbbUrl.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "http://www.gumtree.com.au/s-land-for-sale/c20031", "http://www.gumtree.com.au/s-property-for-rent/c18364", "http://www.gumtree.com.au/s-property-for-sale/c18367" }));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -83,11 +84,12 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnScrape)
-                    .addComponent(tfPassword, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tfUsername, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 399, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tfOutputFileName, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(53, Short.MAX_VALUE))
+                    .addComponent(tfOutputFileName, javax.swing.GroupLayout.PREFERRED_SIZE, 203, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(tfPassword, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(tfUsername, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 116, Short.MAX_VALUE))
+                    .addComponent(cbbUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 434, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(18, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -97,43 +99,40 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
                     .addComponent(jLabel1)
                     .addComponent(tfUsername, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(tfPassword, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(tfUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3))
+                .addGap(28, 28, 28)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel3)
+                    .addComponent(cbbUrl, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(tfOutputFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
                 .addGap(17, 17, 17)
                 .addComponent(btnScrape)
-                .addContainerGap(60, Short.MAX_VALUE))
+                .addContainerGap(49, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void tfPasswordActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tfPasswordActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_tfPasswordActionPerformed
-
     private void btnScrapeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnScrapeActionPerformed
         String userName = tfUsername.getText().trim();
-        String password = tfPassword.getText().trim();
-        String url = tfUrl.getText().trim();
-        String fileName = tfOutputFileName.getText().trim();
+        String password = new String(tfPassword.getPassword());
+        String url = (String) cbbUrl.getSelectedItem();
+        String fileName = tfOutputFileName.getText().trim();       
         
-        userName = "dangduonghung@gmail.com";
-        url = "http://www.gumtree.com.au/s-land-for-sale/c20031";
+//        userName = "dangduonghung@gmail.com";
+//        url = "http://www.gumtree.com.au/s-land-for-sale/c20031";
         if (StringUtils.isBlank(userName) || StringUtils.isBlank(password) || StringUtils.isBlank(url) || StringUtils.isBlank(fileName)) {
             JOptionPane.showMessageDialog(this, "All fields are required!!!");
+            LOG.error("All fields are required!!!");
             return;
         }
-        
-        
+                
+        LOG.error("TEST ERROR");        
         GumtreeScraper scraper = null;
         try {
             scraper = new GumtreeScraper(userName, password, url, fileName);
@@ -141,15 +140,35 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
             boolean validLogin = scraper.login();
             if (!validLogin) {
                 JOptionPane.showMessageDialog(this, "Invalid credentials!!!");
+                LOG.debug("Invalid credentials!!!");
                 return;
             }
 
+            btnScrape.setText("Scraping...");
+            btnScrape.setEnabled(false);
+            this.repaint();
+            this.invalidate();
+            
             List<Gumtree> gumtrees = new ArrayList<>();
             scraper.scrapeWithClick(gumtrees, url);
+            scraper.updateGumtreeModel(gumtrees);
             System.out.print(gumtrees);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            scraper.closeBrowser();
+//            System.out.print(ex);
+//            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Something wrong!!! \nDetails: " + ex);
+            if (scraper != null) {
+                scraper.closeBrowser();
+            }
+            
+//            LOG.debug(ex.getCause());
+//            LOG.info(ex.getMessage());
+//            LOG.debug("ed", ex);
+            LOG.error("Scrape ERROR: ", ex);
+            btnScrape.setText("Scrape");
+            btnScrape.setEnabled(true);
+            this.repaint();
+            this.invalidate();
         }
     }//GEN-LAST:event_btnScrapeActionPerformed
 
@@ -180,6 +199,9 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         }
         //</editor-fold>
 
+        String log4jPath = "src/main/java/log4j.properties";
+        PropertyConfigurator.configure(log4jPath);
+        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -190,13 +212,13 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnScrape;
+    private javax.swing.JComboBox<String> cbbUrl;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JTextField tfOutputFileName;
-    private javax.swing.JTextField tfPassword;
-    private javax.swing.JTextField tfUrl;
+    private javax.swing.JPasswordField tfPassword;
     private javax.swing.JTextField tfUsername;
     // End of variables declaration//GEN-END:variables
 }

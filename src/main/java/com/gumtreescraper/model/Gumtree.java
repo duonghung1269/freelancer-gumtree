@@ -61,6 +61,15 @@ public class Gumtree {
         this.scrapedDate = scrapedDate;
     }
 
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -6,15 +6,15 @@
 package com.gumtreescraper.scraper;
 
 import com.gumtreescraper.model.Gumtree;
-import com.sun.jna.platform.win32.WinBase;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -54,11 +54,13 @@ public class GumtreeScraper extends AbstractScraper {
         webDriver.findElement(By.id("login-password")).sendKeys(password);
         webDriver.findElement(By.className("login-form-submit")).findElement(By.tagName("button")).click();
         
-        waitForSeconds(10);
+//        waitForSeconds(10);
         
         try {
             // if found then return true, otherwise return false
-            webDriver.findElement(By.className("item-sign-out")); 
+            (new WebDriverWait(this.webDriver, 15))
+            .until(ExpectedConditions.presenceOfElementLocated(By.className("item-sign-out")));
+//            webDriver.findElement(By.className("item-sign-out")); 
         } catch (Exception ex) {
             System.out.println(ex);
             return false;
@@ -67,11 +69,87 @@ public class GumtreeScraper extends AbstractScraper {
         return true;
     }
     
+    public void updateGumtreeModel(List<Gumtree> gumtrees) {
+        List<Gumtree> gumtreesNeedToWrite = new ArrayList<>();
+        int count = 0;
+        int totalGumtreeLength = gumtrees.size();
+        for (Gumtree gumtree : gumtrees) {
+//            ad-attributes
+            try {
+                openSite(gumtree.getUrl());
+                waitForPageToLoad();
+
+                String content = (new WebDriverWait(this.webDriver, 15))
+                .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//meta[@name='WT.cg_s']"))).getAttribute("content").toLowerCase();
+
+                String type = content.contains("sale") ? "sale" : "rent";            
+                gumtree.setType(type);
+
+                String saleRentId = "forsaleby_s-wrapper";
+                if (type.equals("rent")) {
+                    saleRentId = "forrentby_s-wrapper";
+                }
+
+                String saleRentType = (new WebDriverWait(this.webDriver, 15))
+                .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@id='ad-attributes']/dl[contains(@id, '" + saleRentId + "')]/dd"))).getText().trim();
+
+                if (!"owner".equalsIgnoreCase(saleRentType)) {
+                    continue;
+                }
+
+                String name = (new WebDriverWait(this.webDriver, 15))
+                .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@id='reply-form']//div[@class='reply-form-name']/a"))).getText().trim();
+
+                gumtree.setName(name);
+                gumtreesNeedToWrite.add(gumtree);
+                
+                count++;
+                if (count % 100 == 0 || count == totalGumtreeLength) {
+                    writeToCsvFile(gumtreesNeedToWrite, fileName);                    
+                    gumtreesNeedToWrite.clear();                    
+                }
+                
+                
+            } catch (TimeoutException ex) {
+                gumtree.setNotes("TIME_OUT");
+                System.out.print(ex.getMessage());
+            }
+        }
+    }
+    
+    public static void writeToCsvFile(List<Gumtree> gumtreesNeedToWrite, String outputCsvFileName) {
+        try {
+            boolean isAppend = true;
+            FileWriter writer = new FileWriter(outputCsvFileName, isAppend);
+            for (Gumtree gumtree : gumtreesNeedToWrite) {
+                writer.append(gumtree.toString()).append("\n");
+            }
+            
+            writer.flush();
+            writer.close();
+        } catch (IOException ex) {
+            Logger.getLogger(GumtreeScraper.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+    
+//    private String getPhoneNumber() {
+//        byte[] arrScreen = webDriver.ggetScreenshotAs(OutputType.BYTES);
+//        BufferedImage imageScreen = ImageIO.read(new ByteArrayInputStream(arrScreen));
+//        WebElement cap = driver.findElementById("captcha");
+//        Dimension capDimension = cap.getSize();
+//        Point capLocation = cap.getLocation();
+//        BufferedImage imgCap = imageScreen.getSubimage(capLocation.x, capLocation.y, capDimension.width, capDimension.height);
+//        ByteArrayOutputStream os = new ByteArrayOutputStream();
+//        ImageIO.write(imgCap, "png", os);
+//    }
+    
     public void scrapeWithClick(List<Gumtree> gumtrees, String url) {
         
         openSite(url);
             waitForPageToLoad();
-                
+            
+        int testCount = 0;
         do {
             List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, 15))
             .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//ul[@id='srchrslt-adtable']/li//h6[@class='rs-ad-title']/a")));
@@ -99,6 +177,11 @@ public class GumtreeScraper extends AbstractScraper {
                 Logger.getLogger(GumtreeScraper.class.getName()).log(Level.SEVERE, null, ex);
             }
         
+            testCount++;
+            
+            if (testCount == 3) {
+                break;
+            }
         } while(true);
     }
     
@@ -231,7 +314,7 @@ public class GumtreeScraper extends AbstractScraper {
 
     @Override
     protected String getDriverPath() {
-        return "src/main/java/driver/chromedriver";
+        return "src/main/java/driver/chromedriver.exe";
     }
 
 }

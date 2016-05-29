@@ -37,7 +37,7 @@ public abstract class AbstractScraper {
 //        }
         
         public void waitForPageToLoad() {
-            (new WebDriverWait(webDriver, 15)).until(new ExpectedCondition<Boolean>() {
+            (new WebDriverWait(webDriver, 30)).until(new ExpectedCondition<Boolean>() {
                 @Override
                 public Boolean apply(WebDriver d) {
                     return (((org.openqa.selenium.JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
