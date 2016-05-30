@@ -89,8 +89,9 @@ public class GumtreeScraper extends AbstractScraper {
         List<Gumtree> gumtreesNeedToWrite = new ArrayList<>();
         int count = 0;
         int totalGumtreeLength = gumtrees.size();
-        for (Gumtree gumtree : gumtrees) {
+        for (int i = 0; i < totalGumtreeLength; i++) {
 //            ad-attributes
+            Gumtree gumtree = gumtrees.get(i);
             try {
                 openSite(gumtree.getUrl());
                 waitForPageToLoad();
@@ -118,9 +119,8 @@ public class GumtreeScraper extends AbstractScraper {
 
                 gumtree.setName(name);
                 gumtreesNeedToWrite.add(gumtree);
-                
-                count++;
-                if (count % NUMBER_OF_LINE_TO_SERIALIZE == 0 || count == totalGumtreeLength) {
+                                
+                if ((i > 0 && (count % NUMBER_OF_LINE_TO_SERIALIZE) == 0 )|| (i == totalGumtreeLength - 1)) {
                     writeToCsvFile(gumtreesNeedToWrite, fileName);                    
                     gumtreesNeedToWrite.clear();                    
                 }
@@ -201,32 +201,61 @@ public class GumtreeScraper extends AbstractScraper {
 //            waitForPageToLoad();
         
         String nextPageUrl = url;
+        boolean needContinue = true;
         do {
             
-            Document doc = Jsoup.connect(nextPageUrl).get();
+            try {
+            Document doc = Jsoup.connect(nextPageUrl)
+                                .timeout(getTimeout() * 1000)
+                                .userAgent("Mozilla")
+//						   .userAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36")
+                                .get();
             Elements adElements = doc.select("#srchrslt-adtable > li");
-            for (Element ad : adElements) {
+            int size = adElements.size();
+            for (int i = 0; i < size; i++) {
+                Element ad = adElements.get(i);
                 Element linkElement = ad.select("h6.rs-ad-title > a").first();
 
+                if (linkElement == null) {
+                    System.out.print(ad);
+                    continue;
+                }
+                
                 String adUrl = linkElement.attr("href");
                 Gumtree gumtree = new Gumtree();
-                gumtree.setUrl(adUrl);
-                gumtrees.add(gumtree);
+                gumtree.setUrl(BASE_URL + adUrl);
+                gumtrees.add(gumtree);         
+                
+                if (i == size - 1) { // last element
+                    Elements adDateElements = ad.select("div.rs-ad-date");
+                    if (adDateElements.isEmpty()) {
+                        continue;
+                    }
+
+                    if (!needToScrapeNextPage(adDateElements.first().text().trim())) {
+                        needContinue = false;
+                    }
+                }
             }
 
+            
+            
             Elements nextElements = doc.select("a.rs-paginator-btn.next");
             if (nextElements.isEmpty()) {
                 break;
             }
             
-            nextPageUrl = nextElements.first().attr("href");           
-                    
-        } while(true);
+            nextPageUrl = BASE_URL + nextElements.first().attr("href");    
+            System.out.println("next page: " + nextPageUrl);
+            }catch (Exception oex) {
+                System.out.println(oex);
+            }
+        } while(true && needContinue);
     }
     
     private boolean needToScrapeNextPage(String dateStr) {
         Date today = new Date();
-        if (DateUtils.isSameDay(today, lastEditedDate)) {
+        if (DateUtils.isSameDay(today, lastEditedDate)) { // check why lastEditedDate is null
             if (dateStr.toLowerCase().contains("minutes") || dateStr.toLowerCase().contains("hours")) {
                 return true;
             }
@@ -382,7 +411,7 @@ public class GumtreeScraper extends AbstractScraper {
 
     @Override
     protected String getDriverPath() {
-        return "src/main/java/driver/chromedriver.exe";
+        return "src/main/java/driver/chromedriver";
     }
 
     @Override

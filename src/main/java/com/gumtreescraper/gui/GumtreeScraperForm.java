@@ -30,6 +30,7 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
     public GumtreeScraperForm() {
         initComponents();
         cbbTimeout.setSelectedItem("60");
+        ftfEditedDate.setText(GumtreeUtils.convertDateToString(new Date()));
     }
 
     /**
