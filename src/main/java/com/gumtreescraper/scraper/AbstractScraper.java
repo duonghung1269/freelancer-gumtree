@@ -20,7 +20,7 @@ public abstract class AbstractScraper {
 //		webDriver.navigate().to(url);
 		
 		try {
-                    webDriver.manage().timeouts().pageLoadTimeout(20, TimeUnit.SECONDS);
+                    webDriver.manage().timeouts().pageLoadTimeout(getTimeout(), TimeUnit.SECONDS);
 //			webDriver.manage().timeouts().implicitlyWait(getTimeout(), TimeUnit.SECONDS);
 		} catch (Exception e) {
 			throw new IllegalStateException("Can't start Web Driver", e);
@@ -37,7 +37,7 @@ public abstract class AbstractScraper {
 //        }
         
         public void waitForPageToLoad() {
-            (new WebDriverWait(webDriver, 30)).until(new ExpectedCondition<Boolean>() {
+            (new WebDriverWait(webDriver, getTimeout())).until(new ExpectedCondition<Boolean>() {
                 @Override
                 public Boolean apply(WebDriver d) {
                     return (((org.openqa.selenium.JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete"));
@@ -52,7 +52,7 @@ public abstract class AbstractScraper {
 	}
 	
 	protected int getTimeout() {
-            return 10;
+            return 120;
         }
 	
 	protected abstract String getStartURL();
