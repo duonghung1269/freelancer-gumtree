@@ -6,12 +6,20 @@
 package com.gumtreescraper.scraper;
 
 import com.gumtreescraper.model.Gumtree;
+import com.gumtreescraper.util.GumtreeUtils;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang.time.DateUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
@@ -30,17 +38,25 @@ public class GumtreeScraper extends AbstractScraper {
     private String password;
     private String url;
     private String fileName;
+    private Date lastEditedDate;
+    private int timeout;
+    
+    private static final long SPECIAL_TIMEOUT = 30;
     
     private static final String BASE_URL = "https://www.gumtree.com.au";
     private static final String LOGIN_URL = "https://www.gumtree.com.au/t-login-form.html";
     
+    private static final int NUMBER_OF_LINE_TO_SERIALIZE = 50;
     
-    public GumtreeScraper(String userName, String password, String url, String fileName) {
+    
+    public GumtreeScraper(String userName, String password, String url, String fileName, Date lastEditedDate, int timeout) {
         super();
         this.username = userName;
         this.password = password;
         this.url = url;
         this.fileName = fileName;
+        this.lastEditedDate = lastEditedDate;
+        this.timeout = timeout;
         this.webDriver = new ChromeDriver();
         
         // add 100 result per page cookie
@@ -58,7 +74,7 @@ public class GumtreeScraper extends AbstractScraper {
         
         try {
             // if found then return true, otherwise return false
-            (new WebDriverWait(this.webDriver, 15))
+            (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
             .until(ExpectedConditions.presenceOfElementLocated(By.className("item-sign-out")));
 //            webDriver.findElement(By.className("item-sign-out")); 
         } catch (Exception ex) {
@@ -79,7 +95,7 @@ public class GumtreeScraper extends AbstractScraper {
                 openSite(gumtree.getUrl());
                 waitForPageToLoad();
 
-                String content = (new WebDriverWait(this.webDriver, 15))
+                String content = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
                 .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//meta[@name='WT.cg_s']"))).getAttribute("content").toLowerCase();
 
                 String type = content.contains("sale") ? "sale" : "rent";            
@@ -90,21 +106,21 @@ public class GumtreeScraper extends AbstractScraper {
                     saleRentId = "forrentby_s-wrapper";
                 }
 
-                String saleRentType = (new WebDriverWait(this.webDriver, 15))
+                String saleRentType = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
                 .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@id='ad-attributes']/dl[contains(@id, '" + saleRentId + "')]/dd"))).getText().trim();
 
                 if (!"owner".equalsIgnoreCase(saleRentType)) {
                     continue;
                 }
 
-                String name = (new WebDriverWait(this.webDriver, 15))
+                String name = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
                 .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@id='reply-form']//div[@class='reply-form-name']/a"))).getText().trim();
 
                 gumtree.setName(name);
                 gumtreesNeedToWrite.add(gumtree);
                 
                 count++;
-                if (count % 100 == 0 || count == totalGumtreeLength) {
+                if (count % NUMBER_OF_LINE_TO_SERIALIZE == 0 || count == totalGumtreeLength) {
                     writeToCsvFile(gumtreesNeedToWrite, fileName);                    
                     gumtreesNeedToWrite.clear();                    
                 }
@@ -149,9 +165,8 @@ public class GumtreeScraper extends AbstractScraper {
         openSite(url);
             waitForPageToLoad();
             
-        int testCount = 0;
         do {
-            List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, 15))
+            List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, getTimeout()))
             .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//ul[@id='srchrslt-adtable']/li//h6[@class='rs-ad-title']/a")));
                       
             for (WebElement ad : gumtreeAds) {
@@ -176,13 +191,66 @@ public class GumtreeScraper extends AbstractScraper {
             } catch (InterruptedException ex) {
                 Logger.getLogger(GumtreeScraper.class.getName()).log(Level.SEVERE, null, ex);
             }
+                    
+        } while(true);
+    }
+    
+    public void scrapeWithJSoup(List<Gumtree> gumtrees, String url) throws IOException {
         
-            testCount++;
+//        openSite(url);
+//            waitForPageToLoad();
+        
+        String nextPageUrl = url;
+        do {
             
-            if (testCount == 3) {
+            Document doc = Jsoup.connect(nextPageUrl).get();
+            Elements adElements = doc.select("#srchrslt-adtable > li");
+            for (Element ad : adElements) {
+                Element linkElement = ad.select("h6.rs-ad-title > a").first();
+
+                String adUrl = linkElement.attr("href");
+                Gumtree gumtree = new Gumtree();
+                gumtree.setUrl(adUrl);
+                gumtrees.add(gumtree);
+            }
+
+            Elements nextElements = doc.select("a.rs-paginator-btn.next");
+            if (nextElements.isEmpty()) {
                 break;
             }
+            
+            nextPageUrl = nextElements.first().attr("href");           
+                    
         } while(true);
+    }
+    
+    private boolean needToScrapeNextPage(String dateStr) {
+        Date today = new Date();
+        if (DateUtils.isSameDay(today, lastEditedDate)) {
+            if (dateStr.toLowerCase().contains("minutes") || dateStr.toLowerCase().contains("hours")) {
+                return true;
+            }
+        } 
+        
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(today);
+        cal.add(Calendar.DAY_OF_YEAR, -1);
+        Date yesterday = cal.getTime();
+        
+        if (DateUtils.isSameDay(yesterday, lastEditedDate)) {
+            if (dateStr.toLowerCase().contains("yesterday")) {
+                return true;
+            }
+        }
+        
+        Date d = GumtreeUtils.convertStringToDate(dateStr);
+        if (d == null) {
+            return false;
+        }
+        
+        return DateUtils.isSameDay(d, lastEditedDate);
+        
+//        return true;
     }
     
     public void scrape(List<Gumtree> gumtrees, String url) {
@@ -211,7 +279,7 @@ public class GumtreeScraper extends AbstractScraper {
 //            List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, 15))
 //            .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//ul[@id='srchrslt-adtable']/li")));
             
-            List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, 15))
+            List<WebElement> gumtreeAds = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
             .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//ul[@id='srchrslt-adtable']/li//h6[@class='rs-ad-title']/a")));
 
             for (WebElement ad : gumtreeAds) {
@@ -317,4 +385,10 @@ public class GumtreeScraper extends AbstractScraper {
         return "src/main/java/driver/chromedriver.exe";
     }
 
+    @Override
+    protected int getTimeout() {
+        return timeout;
+    }
+
+    
 }

@@ -7,7 +7,9 @@ package com.gumtreescraper.gui;
 
 import com.gumtreescraper.model.Gumtree;
 import com.gumtreescraper.scraper.GumtreeScraper;
+import com.gumtreescraper.util.GumtreeUtils;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import javax.swing.JOptionPane;
 import org.apache.commons.lang.StringUtils;
@@ -27,6 +29,7 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
      */
     public GumtreeScraperForm() {
         initComponents();
+        cbbTimeout.setSelectedItem("60");
     }
 
     /**
@@ -46,7 +49,12 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         tfOutputFileName = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         tfPassword = new javax.swing.JPasswordField();
-        cbbUrl = new javax.swing.JComboBox<>();
+        cbbUrl = new javax.swing.JComboBox<String>();
+        cbbTimeout = new javax.swing.JComboBox();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        ftfEditedDate = new javax.swing.JFormattedTextField();
+        jLabel7 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Gumtree Scraper");
@@ -68,7 +76,17 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
 
         jLabel4.setText("Output File");
 
-        cbbUrl.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "http://www.gumtree.com.au/s-land-for-sale/c20031", "http://www.gumtree.com.au/s-property-for-rent/c18364", "http://www.gumtree.com.au/s-property-for-sale/c18367" }));
+        cbbUrl.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "http://www.gumtree.com.au/s-land-for-sale/c20031", "http://www.gumtree.com.au/s-property-for-rent/c18364", "http://www.gumtree.com.au/s-property-for-sale/c18367" }));
+
+        cbbTimeout.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "30", "45", "60", "75", "90", "105", "120", "135", "150", "165", "180", " " }));
+
+        jLabel5.setText("Timeout");
+
+        jLabel6.setText("seconds");
+
+        ftfEditedDate.setFormatterFactory(new javax.swing.text.DefaultFormatterFactory(new javax.swing.text.DateFormatter(new java.text.SimpleDateFormat("dd/MM/yyyy"))));
+
+        jLabel7.setText("Edited Date");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -76,11 +94,14 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(27, 27, 27)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel2)
+                        .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel4, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jLabel5)
+                    .addComponent(jLabel7))
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(btnScrape)
@@ -88,8 +109,14 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
                     .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                         .addComponent(tfPassword, javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(tfUsername, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 116, Short.MAX_VALUE))
-                    .addComponent(cbbUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 434, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(18, Short.MAX_VALUE))
+                    .addComponent(cbbUrl, javax.swing.GroupLayout.PREFERRED_SIZE, 434, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(ftfEditedDate, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                            .addComponent(cbbTimeout, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jLabel6))))
+                .addContainerGap(34, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -110,9 +137,18 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(tfOutputFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel4))
-                .addGap(17, 17, 17)
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(cbbTimeout, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6)
+                    .addComponent(jLabel5))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(ftfEditedDate, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel7))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 20, Short.MAX_VALUE)
                 .addComponent(btnScrape)
-                .addContainerGap(49, Short.MAX_VALUE))
+                .addGap(59, 59, 59))
         );
 
         pack();
@@ -126,7 +162,7 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         
 //        userName = "dangduonghung@gmail.com";
 //        url = "http://www.gumtree.com.au/s-land-for-sale/c20031";
-        if (StringUtils.isBlank(userName) || StringUtils.isBlank(password) || StringUtils.isBlank(url) || StringUtils.isBlank(fileName)) {
+        if (StringUtils.isBlank(userName) || StringUtils.isBlank(password) || StringUtils.isBlank(url) || StringUtils.isBlank(fileName) || StringUtils.isBlank(ftfEditedDate.getText())) {
             JOptionPane.showMessageDialog(this, "All fields are required!!!");
             LOG.error("All fields are required!!!");
             return;
@@ -135,7 +171,9 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         LOG.error("TEST ERROR");        
         GumtreeScraper scraper = null;
         try {
-            scraper = new GumtreeScraper(userName, password, url, fileName);
+            Date lastEditedDate = GumtreeUtils.convertStringToDate(ftfEditedDate.getText().trim());
+            int timeout = Integer.parseInt((String) cbbTimeout.getSelectedItem());
+            scraper = new GumtreeScraper(userName, password, url, fileName, lastEditedDate, timeout);
         
             boolean validLogin = scraper.login();
             if (!validLogin) {
@@ -150,13 +188,13 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
             this.invalidate();
             
             List<Gumtree> gumtrees = new ArrayList<>();
-            scraper.scrapeWithClick(gumtrees, url);
+            scraper.scrapeWithJSoup(gumtrees, url);
             scraper.updateGumtreeModel(gumtrees);
             System.out.print(gumtrees);
         } catch (Exception ex) {
 //            System.out.print(ex);
 //            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Something wrong!!! \nDetails: " + ex);
+            JOptionPane.showMessageDialog(this, "Something wrong!!! \nDetails: " + ex.getMessage());
             if (scraper != null) {
                 scraper.closeBrowser();
             }
@@ -200,7 +238,7 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
         //</editor-fold>
 
         String log4jPath = "src/main/java/log4j.properties";
-        PropertyConfigurator.configure(log4jPath);
+        PropertyConfigurator.configure(log4jPath);                
         
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -212,11 +250,16 @@ public class GumtreeScraperForm extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnScrape;
+    private javax.swing.JComboBox cbbTimeout;
     private javax.swing.JComboBox<String> cbbUrl;
+    private javax.swing.JFormattedTextField ftfEditedDate;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JTextField tfOutputFileName;
     private javax.swing.JPasswordField tfPassword;
     private javax.swing.JTextField tfUsername;
