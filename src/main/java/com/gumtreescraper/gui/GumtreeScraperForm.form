@@ -38,11 +38,6 @@
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
                   <Component id="btnScrape" min="-2" max="-2" attributes="0"/>
-                  <Component id="tfOutputFileName" alignment="0" min="-2" pref="203" max="-2" attributes="0"/>
-                  <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
-                      <Component id="tfPassword" alignment="0" max="32767" attributes="0"/>
-                      <Component id="tfUsername" alignment="0" pref="116" max="32767" attributes="0"/>
-                  </Group>
                   <Component id="cbbUrl" alignment="0" min="-2" pref="434" max="-2" attributes="0"/>
                   <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
                       <Component id="ftfEditedDate" alignment="0" max="32767" attributes="0"/>
@@ -52,6 +47,11 @@
                           <Component id="jLabel6" min="-2" max="-2" attributes="0"/>
                       </Group>
                   </Group>
+                  <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
+                      <Component id="tfPassword" alignment="0" pref="225" max="32767" attributes="0"/>
+                      <Component id="tfUsername" alignment="0" max="32767" attributes="0"/>
+                  </Group>
+                  <Component id="tfOutputFileName" alignment="0" min="-2" pref="225" max="-2" attributes="0"/>
               </Group>
               <EmptySpace pref="34" max="32767" attributes="0"/>
           </Group>

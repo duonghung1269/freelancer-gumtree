@@ -107,10 +107,12 @@ public class GumtreeScraper extends AbstractScraper {
                     saleRentId = "forrentby_s-wrapper";
                 }
 
-                String saleRentType = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
+                String saleRentBy = (new WebDriverWait(this.webDriver, SPECIAL_TIMEOUT))
                 .until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@id='ad-attributes']/dl[contains(@id, '" + saleRentId + "')]/dd"))).getText().trim();
 
-                if (!"owner".equalsIgnoreCase(saleRentType)) {
+                System.out.append("===Sale/Rent by: " + saleRentBy);
+                
+                if (!"owner".equalsIgnoreCase(saleRentBy)) {
                     continue;
                 }
 
@@ -214,6 +216,11 @@ public class GumtreeScraper extends AbstractScraper {
             int size = adElements.size();
             for (int i = 0; i < size; i++) {
                 Element ad = adElements.get(i);
+                
+                if (!isOwner(ad)) {
+                    continue;
+                }
+                
                 Element linkElement = ad.select("h6.rs-ad-title > a").first();
 
                 if (linkElement == null) {
@@ -253,11 +260,35 @@ public class GumtreeScraper extends AbstractScraper {
         } while(true && needContinue);
     }
     
+    private boolean isOwner(Element adElement) {
+        Elements forSaleByElements = adElement.select("span.rs-ad-attributes-forsaleby_s");
+        Elements forRentByElements = adElement.select("span.rs-ad-attributes-forrentby_s");
+        
+        // sometime if ads is owner then it does not display
+        if (forSaleByElements.isEmpty() && forRentByElements.isEmpty()) {
+            return true;
+        }
+        
+        if (!forSaleByElements.isEmpty() && ("agency".equalsIgnoreCase(forSaleByElements.first().text().trim()) || "agent".equalsIgnoreCase(forSaleByElements.first().text().trim()))) {
+            return false;
+        }
+        
+        if (!forRentByElements.isEmpty() && ("agency".equalsIgnoreCase(forRentByElements.first().text().trim()) || "agent".equalsIgnoreCase(forRentByElements.first().text().trim()))) {
+            return false;
+        }
+        
+        return true;
+    }
+    
     private boolean needToScrapeNextPage(String dateStr) {
         Date today = new Date();
         if (DateUtils.isSameDay(today, lastEditedDate)) { // check why lastEditedDate is null
             if (dateStr.toLowerCase().contains("minutes") || dateStr.toLowerCase().contains("hours")) {
                 return true;
+            }
+            
+            if (dateStr.toLowerCase().contains("yesterday")) {
+                return false;
             }
         } 
         
@@ -411,7 +442,7 @@ public class GumtreeScraper extends AbstractScraper {
 
     @Override
     protected String getDriverPath() {
-        return "src/main/java/driver/chromedriver";
+        return "src/main/java/driver/chromedriver.exe";
     }
 
     @Override
